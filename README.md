@@ -1,67 +1,56 @@
-DigiMart - Digital Goods Marketplace
+1 Digimart Cedar - Reference Solution
 
-1. Public Credentials
-- Customer: customer@public.com / PublicPass123!
-- Vendor: vendor@public.com / PublicPass123!
-- Admin: admin@public.com / PublicPass123!
+This repository contains the clean, production-ready source code for the **Digimart Cedar** e-commerce platform. It serves as the reference implementation for all 10 assigned tasks.
 
-2. Quick Start
--bash
-cd base-app
-docker compose up
+2 Project Structure
 
-### Local Testing (Alternative)
-If Docker is unavailable locally:
-```bash
-# Backend
-cd base-app/src/backend
-export DJANGO_SETTINGS_MODULE=config.settings
-python manage.py makemigration api
+This repository is structured to support independent verification of each task via Git branches.
+
+reference-solutions/
+├── .git/               # Contains 11 branches: main, task-1 ... task-10
+├── src/
+│   ├── backend/        # Django REST Framework API
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   ├── seed_public.py
+│   │   └── ...
+│   └── frontend/       # Svelte + Vite Client
+│       ├── Dockerfile.ecs
+│       ├── package.json
+│       └── ...
+├── docker-compose.yml  # Orchestration for Dev/Prod
+└── README.md
+
+3. Key Features Implemented
+Task 1-2: Product Catalog, Global Search, and Filtering.
+Task 3-4: User Authentication (JWT/Session), Role-Based Access Control (RBAC).
+Task 5: Security Hardening & Vulnerability Mitigation (SQLi, XSS, IDOR).
+Task 6-7: Shopping Cart, Guest Checkout, and Order Management.
+Task 8: Async Email Notifications (Background Tasks).
+Task 9: Review System with Validation.
+Task 10: Recommendation Engine (Category-based & Collaborative Filtering).
+
+4.Tech Stack
+
+Backend: Python 3.13, Django 5.1, Django REST Framework.
+Frontend: Svelte 4, Vite, Bootstrap 5.
+Database: PostgreSQL (Production) / SQLite (Dev).
+Deployment: Docker, ECS Fargate, Nginx.
+
+5. How to Run
+-  docker-compose up --build #using docker
+   Frontend: http://localhost:5173
+   Backend API: http://localhost:3000
+   Health Check: http://localhost:3000/health/
+
+- Local Development
+cd src/backend (FrontEnd)
+pip install -r requirements.txt
 python manage.py migrate
-python manage.py shell < scripts/seed_public.py
+python seed_public.py
 python manage.py runserver 0.0.0.0:3000
 
-# Frontend (new terminal)
-
-
-cd base-app/src/frontend
+cd src/frontend
 npm install
 npm run dev
-
-# Access: http://localhost:5173
-###########  How to test ###############
-#Before test you must install exact Playwright version(1.58.2)
-#npm install --save-dev @playwright/test@1.58.2
-npx playwright install chromium
-npx playwright --version
-# Should output: Version 1.58.2
-#Task Test
-python base-app/src/backend/scripts/seed_public.py #Before test you have to run this command
-npx playwright test tasks/test-cases/base-tests/public/base-public.spec.ts --reporter=list
-npx playwright test tasks/test-cases/task-1/public/task-1.spec.ts --reporter=list  #public
-#Run createTestImage
-npx playwright test tasks/test-cases/task-2/public/task-2.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-3/public/task-3.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-4/public/task-4.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-5/public/task-5.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-6/public/task-6.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-7/public/task-7.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-8/public/task-8.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-9/public/task-9.spec.ts --reporter=list  #public
-npx playwright test tasks/test-cases/task-10/public/task-10.spec.ts --reporter=list  #public
-#Evaluation Test
-python evaluation/scripts/seed_private.py #Before test you have to run this command in project root
-npx playwright test evaluation/private-test-cases/base-tests/private/base-private.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-1/private/task-1.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-2/private/task-2.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-3/private/task-3.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-4/private/task-4.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-5/private/task-5.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-6/private/task-6.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-7/private/task-7.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-8/private/task-8.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-9/private/task-9.spec.ts --reporter=list # Private
-npx playwright test evaluation/private-test-cases/task-10/private/task-10.spec.ts --reporter=list # Private
-
-
 
