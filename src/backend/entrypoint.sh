@@ -1,26 +1,46 @@
 #!/bin/bash
 set -e
 
-echo "=== Application Starting ==="
+echo "🚀 Starting Digimart Entry Point..."
 
-mkdir -p /app/data
+DB_HOST=${DB_HOST:-localhost}
+DB_PORT=${DB_PORT:-5432}
 
-echo "Running migrations..."
-python manage.py migrate --noinput
-
-SEED_PATH=${SEED_SCRIPT:-scripts/seed_public.py}
-
-if [ -f "$SEED_PATH" ]; then
-    echo "Seeding database with $SEED_PATH..."
-    COUNT=$(python manage.py shell -c "from api.models import User; print(User.objects.count())")
-    if [ "$COUNT" -eq 0 ]; then
-        python manage.py shell < $SEED_PATH
-    else
-        echo "Database already seeded, skipping."
+if [[ "$DATABASE_URL" != *"sqlite"* ]]; then
+    echo "⏳ Waiting for database at $DB_HOST:$DB_PORT..."
+    max_attempts=30
+    attempt=0
+    until nc -z "$DB_HOST" "$DB_PORT" || [ $attempt -eq $max_attempts ]; do
+        attempt=$((attempt+1))
+        echo "Database unavailable (attempt $attempt/$max_attempts). Sleeping 2s..."
+        sleep 2
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        echo "❌ Database connection failed after $max_attempts attempts."
+        exit 1
     fi
+    echo "✅ Database is ready!"
 else
-    echo "⚠️ Seed script not found: $SEED_PATH"
+    echo "💾 Detected SQLite. Skipping network wait."
 fi
 
-echo "Starting Gunicorn..."
-exec gunicorn --bind 0.0.0.0:3000 --workers 2 --access-logfile - --error-logfile - config.wsgi:application
+echo "🔄 Applying migrations..."
+python manage.py migrate --noinput
+
+if [ "$SEED_MODE" = "private" ]; then
+    echo "🌱 Seeding PRIVATE data..."
+    if [ -f "evaluation/scripts/seed_private.py" ]; then
+        python evaluation/scripts/seed_private.py
+    elif [ -f "../evaluation/scripts/seed_private.py" ]; then
+        python ../evaluation/scripts/seed_private.py
+    else
+        echo "⚠️ Private seed script not found."
+    fi
+elif [ "$SEED_DATA" = "True" ]; then
+    echo "🌱 Seeding PUBLIC data..."
+    python seed_public.py || echo "⚠️ Public seed failed or skipped."
+fi
+
+echo "▶️ Starting server..."
+exec python manage.py runserver 0.0.0.0:3000
