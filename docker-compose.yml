@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  db-init:
+    image: python:3.13-slim
+    container_name: digimart-db-init
+    volumes:
+      - ./src/backend:/app
+      - ./src/backend/db:/app/db
+    working_dir: /app
+    environment:
+      - DATABASE_URL=sqlite:///db/db.sqlite3
+    command: >
+      sh -c "pip install -q -r requirements.txt &&
+             python manage.py migrate --noinput &&
+             echo 'Database initialized'"
+    healthcheck:
+      test: ["CMD-SHELL", "python manage.py check || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digimart-net
+
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: digimart-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/backend:/app
+      - ./src/backend/db:/app/db
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - DATABASE_URL=sqlite:///db/db.sqlite3
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,frontend
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://frontend:80
+      - SEED_DATA=True
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - digimart-net
+    depends_on:
+      db-init:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: digimart-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000/api
+    command: npm run dev -- --host 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - digimart-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  digimart-net:
+    driver: bridge
